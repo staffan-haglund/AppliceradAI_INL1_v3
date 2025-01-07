@@ -8,13 +8,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Parametrar
 # CROSSOVER_RATE = 0.5
 NUMBER_OF_TRUCKS = 10
-MAX_POPULATION = 100                # Antal kromosomer (möjliga lösningar)
-MAX_GENERATIONS = 500
-MUTATION_RATE = 0.01
+MAX_POPULATION = 200                # Antal kromosomer (möjliga lösningar)
+MAX_GENERATIONS = 400
+MUTATION_RATE = 0.3
 MAX_CAPACITY = [800.0] * NUMBER_OF_TRUCKS       # Maxkapacitet per lastbil
 
 
-def read_packages(file='lagerstatus-2000.csv'):
+def read_packages(file='lagerstatus1.csv'):
     '''Generator som läser paket från en CSV-fil och yield ett paket åt gången.'''
     csv_file_path = os.path.join(BASE_DIR, file)
     with open(csv_file_path, mode='r', newline='') as file:
@@ -30,7 +30,7 @@ def read_packages(file='lagerstatus-2000.csv'):
 
 
 # Läs in paket
-packages = list(read_packages('lagerstatus-2000.csv'))
+packages = list(read_packages('lagerstatus1.csv'))
 num_packages = len(packages)
 
 # Lookup dictionary med paketinfo
@@ -78,7 +78,7 @@ def fitness(chromosome) -> int:
             truck_loads[truck - 1].append(i)
     
     total_value = 0
-    penalty = 1000  # Penalty om man går över kapacitet
+    penalty = 2000  # Penalty om man går över kapacitet
     for truck in truck_loads:
         total_weight = sum(package_info[i]['Vikt'] for i in truck)
         if total_weight <= MAX_CAPACITY[0]:
@@ -189,11 +189,23 @@ for i, truck in enumerate(best_solution):
         package = package_info[i]
         sorted_packages.append((package['Paket_id'], package['Vikt'], package['Förtjänst'], package['Deadline'], truck, i))
 # Sortera listan efter "truck"-värde
-sorted_packages.sort(key=lambda x: x[3])
+sorted_packages.sort(key=lambda x: x[4])
 
 for package_id, weight, value, deadline, truck, i in sorted_packages:
     print(f'Paket_id: {package_id}, Vikt: {weight}, Förtjänst: {value}, Truck: {truck}, i: {i}')
 
+print(f'Antal paket i lastbilar: {len(sorted_packages)}')
+
 print("Fitness:", fitness(best_solution))
 
 print(f'{best_solution.count(0)}')
+
+input()
+# truck1_weight = sum(t[1] for t in sorted_packages if t[4] == 10)
+total_profit = sum(t[2] for t in sorted_packages)
+
+for i in range(11):
+    truck_weight = sum(t[1] for t in sorted_packages if t[4] == i)
+    print(f'Lastbil #{i}: {truck_weight}')
+
+print(f'Total förtjänst: {total_profit}')
