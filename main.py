@@ -3,6 +3,8 @@ import random
 import csv
 import os
 
+import matplotlib.pyplot as plt
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Parametrar
@@ -70,7 +72,7 @@ def initialize_population() -> list:
     return population
 
 
-# Fitness function med penalty för att gå över kapacitet
+# Fitness function med penalty när lastbil går över kapacitet
 def fitness(chromosome) -> int:
     truck_loads = [[] for _ in range(NUMBER_OF_TRUCKS)]
     for i, truck in enumerate(chromosome):
@@ -132,13 +134,21 @@ def mutate(chromosome):
 def calculate_statistics(stats):
     match stats:
         case 1:     # Förtjänsten för dagens leveranser
-            return "zero"
-        case 2:     # Straffavgift för paket kvar i lager
+            total_profit = sum(t[2] for t in sorted_packages)
+            return total_profit
+        case 2:     # Penalty för paket kvar i lager
+            
             return "one"
         case 3:     # Antal paket kvar i lager
             return best_solution.count(0)
         case 4:     # Total förtjänst kvar i lager
-            return "three"
+            unassigned_packages = []
+            for i, truck in enumerate(best_solution):
+                if truck == 0:
+                    package = package_info[i]
+                    unassigned_packages.append((package['Paket_id'], package['Vikt'], package['Förtjänst'], package['Deadline'], i))
+            total_profit = sum(t[2] for t in unassigned_packages)
+            return total_profit
         case default:
             return "something"
 
@@ -183,6 +193,18 @@ for i, truck in enumerate(best_solution):
 
 input()
 
+# Förtjänst för alla paket i lager
+unassigned_packages = []
+for i, truck in enumerate(best_solution):
+    if truck == 0:
+        package = package_info[i]
+        unassigned_packages.append((package['Paket_id'], package['Vikt'], package['Förtjänst'], package['Deadline'], i))
+lager_profit = sum(t[2] for t in unassigned_packages)
+print(f'Förtjänst för paket i lager: {lager_profit}')
+
+input()
+
+# Bästa solution sorterad efter lastbilarna
 sorted_packages = []
 for i, truck in enumerate(best_solution):
     if truck > 0:
@@ -196,16 +218,42 @@ for package_id, weight, value, deadline, truck, i in sorted_packages:
 
 print(f'Antal paket i lastbilar: {len(sorted_packages)}')
 
+# Fitness
 print("Fitness:", fitness(best_solution))
 
+# Antal paket i lager
 print(f'{best_solution.count(0)}')
 
 input()
-# truck1_weight = sum(t[1] for t in sorted_packages if t[4] == 10)
+
 total_profit = sum(t[2] for t in sorted_packages)
 
+# Alla lastbilar med vikt i lasten
+truck_weight_list = []
 for i in range(11):
     truck_weight = sum(t[1] for t in sorted_packages if t[4] == i)
     print(f'Lastbil #{i}: {truck_weight}')
+    truck_weight_list.append(truck_weight)
 
 print(f'Total förtjänst: {total_profit}')
+
+#  Statistik på fördelningen av vikt och förtjänst för paketen, både i bilarna och de
+# som är kvar i lager:
+# – Histogram.
+# – Medelvärde.
+# – Varians.
+# – Standardavvikelse.
+# Ta ut hur många paket inom vissa viktintervall, 0-1, 1-2, 2-3, etc. Eller deras förtjänster.
+
+# Plotting a basic histogram
+print(truck_weight_list)
+input()
+plt.hist(truck_weight_list, bins=10, color='skyblue', edgecolor='black')
+
+# Adding labels and title
+plt.ylabel('Lastbil')
+plt.xlabel('Vikt')
+plt.title('Basic Histogram')
+ 
+# Display the plot
+plt.show()
