@@ -2,7 +2,6 @@
 import random
 import csv
 import os
-# import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -30,11 +29,11 @@ def read_packages(file='lagerstatus-2000.csv'):
             yield {'Paket_id': package_id, 'Vikt': weight, 'Förtjänst': profit, 'Deadline': days_until_deadline}
 
 
-# Load packages
+# Läs in paket
 packages = list(read_packages('lagerstatus-2000.csv'))
 num_packages = len(packages)
 
-# Create a lookup dictionary for package information
+# Lookup dictionary med paketinfo
 package_info = {i: package for i, package in enumerate(packages)}
 
 # Antagande: Förtjänstkategori 1 är bäst, 10 är sämst
@@ -44,8 +43,10 @@ fortjanst = [0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 # def initialize_population():
 #     return [[random.randint(0, NUMBER_OF_TRUCKS) for _ in range(num_packages)] for _ in range(MAX_POPULATION)]
 
-# Initialize population without overloading trucks
+# Initialisera population utan att överlasta lastbilarna
 def initialize_population() -> list:
+    ''' Initialiserar population i form av lista, där 1-10 anger vilken lastbil 
+        som paketet är i, och 0 är om paketet inte är i någon lastbil'''
     population = []
     for _ in range(MAX_POPULATION):
         chromosome = [0] * num_packages     # Alla paket är unassigned från början
@@ -55,29 +56,29 @@ def initialize_population() -> list:
         for i, package in enumerate(packages):
             assigned = False
             possible_trucks = list(range(NUMBER_OF_TRUCKS))
-            random.shuffle(possible_trucks)  # Randomize truck assignment order
+            random.shuffle(possible_trucks)  # Slumpa lastbilarnas ordning
             for truck in possible_trucks:
                 if truck_weights[truck] + package['Vikt'] <= MAX_CAPACITY[truck]:
-                    chromosome[i] = truck + 1  # Assign package to truck (1-indexed)
+                    chromosome[i] = truck + 1  # Knyt paket till lastbil (1-indexed)
                     truck_loads[truck].append(i)
                     truck_weights[truck] += package['Vikt']
                     assigned = True
                     break
             if not assigned:
-                chromosome[i] = 0  # Leave package unassigned
+                chromosome[i] = 0  # Lämna paketet olastat
         population.append(chromosome)
     return population
 
 
-# Fitness function with penalty for exceeding capacity
+# Fitness function med penalty för att gå över kapacitet
 def fitness(chromosome) -> int:
     truck_loads = [[] for _ in range(NUMBER_OF_TRUCKS)]
     for i, truck in enumerate(chromosome):
-        if truck > 0:  # Ignore unassigned packages (0)
+        if truck > 0:  # Ignorera olastade paket (0)
             truck_loads[truck - 1].append(i)
     
     total_value = 0
-    penalty = 1000  # Penalty for exceeding capacity
+    penalty = 1000  # Penalty om man går över kapacitet
     for truck in truck_loads:
         total_weight = sum(package_info[i]['Vikt'] for i in truck)
         if total_weight <= MAX_CAPACITY[0]:
@@ -88,7 +89,7 @@ def fitness(chromosome) -> int:
     # Deadline
     deadline_penalty = 0
     for i, truck in enumerate(chromosome):
-        if truck > 0:  # Ignore unassigned packages (0)
+        if truck > 0:  # Ignorera olastade paket (0)
             days_until_deadline = package_info[i]['Deadline']
             if days_until_deadline < 0:
                 deadline_penalty = deadline_penalty + -(abs(days_until_deadline) ** 2)
@@ -103,6 +104,7 @@ def selection(population):
 
 # Crossover one point
 def crossover_1point(parent1, parent2) -> tuple:
+    ''' Crossover, typ one point '''
     point = random.randint(1, num_packages - 1)
     child1 = parent1[:point] + parent2[point:]
     child2 = parent2[:point] + parent1[point:]
@@ -110,6 +112,7 @@ def crossover_1point(parent1, parent2) -> tuple:
 
 # Crossover two point
 def crossover_2point(parent1, parent2) -> tuple:
+    ''' Crossover, typ two point '''
     point1, point2 = sorted(random.sample(range(1, num_packages + 1), 2))
     child1 = parent1[:point1] + parent2[point1:point2] + parent1[point1:]
     child2 = parent2[:point1] + parent1[point1:point2] + parent2[point1:]
@@ -166,7 +169,7 @@ for _ in range(MAX_GENERATIONS):
 
 input()
 
-# Best solution
+# Bästa(?) lösning
 best_solution = max(population, key=fitness)
 print("Best solution:", best_solution)
 print("Fitness:", fitness(best_solution))
@@ -185,7 +188,7 @@ for i, truck in enumerate(best_solution):
     if truck > 0:
         package = package_info[i]
         sorted_packages.append((package['Paket_id'], package['Vikt'], package['Förtjänst'], package['Deadline'], truck, i))
-# Sort the list by the "truck" value
+# Sortera listan efter "truck"-värde
 sorted_packages.sort(key=lambda x: x[3])
 
 for package_id, weight, value, deadline, truck, i in sorted_packages:
