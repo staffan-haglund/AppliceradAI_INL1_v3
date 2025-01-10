@@ -7,9 +7,13 @@ ENV/
 env.bak/
 venv.bak/
 
+*.jpg
+*.odt
+*.docx
 
 tempCodeRunnerFile.py
 notes.txt
+notes2.txt
 temp.txt
 exempel.txt
 mutation.txt
