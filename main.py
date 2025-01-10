@@ -137,12 +137,12 @@ def calculate_statistics(best_solution):
         if truck == 0:
             package = package_info[i]
             unassigned_packages.append((package['Paket_id'], package['Vikt'], package['Förtjänst'], package['Deadline'], i))
-    unassigned_total_penalty = sum(-(abs(t[3]) ** 2) for t in unassigned_packages)
+    unassigned_total_penalty = sum(-(abs(t[3]) ** 2) for t in unassigned_packages if t[3] < 0)
     sorted_unassigned_packages = unassigned_packages
     sorted_unassigned_packages.sort(key=lambda x: x[4])
 
-    # Total förtjänst kvar i lager
-    # Den totala förtjänsten kvar i lager (exklusive straffavgiften).
+
+    # Totala förtjänsten kvar i lager (exklusive straffavgiften).
     unassigned_total_profit = sum(t[2] for t in unassigned_packages)
     unassigned_total_profit = unassigned_total_profit - unassigned_total_penalty
 
@@ -152,7 +152,7 @@ def calculate_statistics(best_solution):
         if truck > 0:
             package = package_info[i]
             sorted_packages_trucks.append((package['Paket_id'], package['Vikt'], package['Förtjänst'], package['Deadline'], truck, i))
-    # Sortera listan efter "truck"-värde
+    # Sortera listan efter lastbilarna
     sorted_packages_trucks.sort(key=lambda x: x[4])
 
     # Förtjänsten för dagens leveranser
@@ -180,17 +180,13 @@ def genetic_algorithm():
         new_population = []
         while len(new_population) < MAX_POPULATION:
             parents = random.sample(selected, 2)
-            # n = random.randint(0, 1)
-            # if n == 0:
             child1, child2 = crossover_1point(*parents)
-            # else:
-            #     child1, child2 = crossover_2point(*parents)
             mutate(child1)
             mutate(child2)
             new_population.append(child1)
             new_population.append(child2)
         population = new_population
-        # Bästa(?) lösning
+        # Bästa lösningen
         best_solution = max(population, key=fitness)
     
     return best_solution
@@ -205,9 +201,9 @@ def plot_stats(weight_list, xlabel_weight, ylabel_weight, weight_title, profit_l
         - Varians.
         - Standardavvikelse.
     '''
-    weight_mean = np.mean(weight_list)
-    weight_variance = np.var(weight_list)
-    weight_std_dev = np.std(weight_list)
+    weight_mean = np.mean(weight_list)      # Medel
+    weight_variance = np.var(weight_list)   # Varians
+    weight_std_dev = np.std(weight_list)    # Standardavvikelse
     
     profit_mean = np.mean(profit_list)
     profit_variance = np.var(profit_list)
@@ -242,122 +238,125 @@ def plot_stats(weight_list, xlabel_weight, ylabel_weight, weight_title, profit_l
     plt.show()
 
 
-file_loaded = False
-file_name = ""
-best_solution = 0
-num_packages = 0
-menu_sel = ""
-while menu_sel != "0":
-    print("--------------------------------------------------")
-    print("  Lindas Lustfyllda Rederi")
-    print("--------------------------------------------------")
-    print(f"Inläst fil: {file_name} (Antal paket: {num_packages})")
-    print("--------------------------------------------------")
-    print("1. Läs in lagerstatus.csv")
-    print("2. Läs in lagerstatus2.csv")
-    print("3. Läs in lagerstatus3.csv")
-    print("4. Läs in lagerstatus4.csv")
-    print("--------------------------------------------------")
-    print("5. Kör GA")
-    print("--------------------------------------------------")
-    print("6. Visa statistik")
-    print("7. Plot: fördelningen av vikt och förtjänst\n\tför paketen i bilarna")
-    print("8. Plot: fördelningen av vikt och förtjänst\n\tför paketen i lager")
-    print("--------------------------------------------------")
-    print("0. Avsluta")
-    print("--------------------------------------------------")
-    menu_sel = input("Menyval> ")
 
-    match menu_sel:
-        case '1':
-                packages = list(read_packages(file='lagerstatus.csv'))
-                # Lookup dictionary med paketinfo
-                package_info = {i: package for i, package in enumerate(packages)}
-                # print(f'package_info: {package_info}')
-                num_packages = len(packages)
-                file_loaded = True
-                file_name = "lagerstatus.csv"
-                new_screen()
-        case '2':
-                packages = list(read_packages(file='lagerstatus2.csv'))
-                # Lookup dictionary med paketinfo
-                package_info = {i: package for i, package in enumerate(packages)}
-                num_packages = len(packages)
-                file_loaded = True
-                file_name = "lagerstatus2.csv"
-                new_screen()
-        case '3':
-                packages = list(read_packages(file='lagerstatus3.csv'))
-                # Lookup dictionary med paketinfo
-                package_info = {i: package for i, package in enumerate(packages)}
-                num_packages = len(packages)
-                file_loaded = True
-                file_name = "lagerstatus3.csv"
-                new_screen()
-        case '4':
-                packages = list(read_packages(file='lagerstatus4.csv'))
-                # Lookup dictionary med paketinfo
-                package_info = {i: package for i, package in enumerate(packages)}
-                num_packages = len(packages)
-                file_loaded = True
-                file_name = "lagerstatus4.csv"
-                new_screen()
-        case '5':
-                if file_loaded:
-                    best_solution = genetic_algorithm()
-                    statistics = calculate_statistics(best_solution)
-                    # print("Best solution:", best_solution)
-                    # print("Fitness:", fitness(best_solution))
-                else:
-                    new_screen()
-                    print("Läs in en fil first")
-        case '6':
-                if best_solution != 0:
-                    # print(f'best_solution: {best_solution}')
-                    # input()
-                    print(f'Statistik:')
-                    print(f'Förtjänst för dagens leveranser: {statistics['TodaysTotalProfit']}')
-                    print(f'Straffavgift för paket i lagret: {statistics['UnassignedPenalty']}')
-                    print(f'Antal paket i lagret: {statistics['NrOfUnassignedPackages']}')
-                    print(f'Den totala förtjänsten kvar i lager (exkl. straffavgiften): {statistics['UnassignedProfit']}')
-                    print("##################################################################")
-                    sorted_packages_trucks = statistics['SortedAssignedPackages']
-                    for i in range(11):
-                        truck_weight = sum(t[1] for t in sorted_packages_trucks if t[4] == i)
-                        # truck_no_packages = sum(j for t in sorted_packages_trucks if t[4] == i)
-                        print(f'Lastbil #{i}: {truck_weight}')
-                    input("[Enter] för menyn")
-                    new_screen()
-        case '7':
-                if best_solution != 0:
-                    print(f'Plot: fördelningen av vikt och förtjänst för paketen i bilarna')
-                    input("Any key for plot")
-                    sorted_packages_trucks = statistics['SortedAssignedPackages']
-                    truck_weight_list = [t[1] for t in sorted_packages_trucks]
-                    truck_profit_list = [t[2] for t in sorted_packages_trucks]
-                    # print(f'sorted_packages_trucks {sorted_packages_trucks}')
-                    # input()
-                    plot_stats(weight_list=truck_weight_list, xlabel_weight="Vikt", ylabel_weight="Antal paket", weight_title="Fördelning av vikt för paketen i lastbilarna", 
-                                profit_list=truck_profit_list, xlabel_profit="Förtjänst", ylabel_profit="Antal paket", profit_title="Fördelning av förtjänst för paketen i lastbilarna")
-                    # input("[Enter] för menyn")
-        case '8':
-                if best_solution != 0:
-                    print(f'Plot: fördelningen av vikt och förtjänst för paketen i lager')
-                    input("Any key for plot")
-                    sorted_unassigned_packages = statistics['SortedUnassignedPackages']
-                    unassigned_weight_list = [t[1] for t in sorted_unassigned_packages]
-                    unassigned_profit_list = [t[2] for t in sorted_unassigned_packages]
-                    # print(f'sorted_unassigned_packages {sorted_unassigned_packages}')
-                    # input()
-                    plot_stats(weight_list=unassigned_weight_list, xlabel_weight="Vikt", ylabel_weight="Antal paket", weight_title="Fördelning av vikt för paketen i lager", 
-                                profit_list=unassigned_profit_list, xlabel_profit="Förtjänst", ylabel_profit="Antal paket", profit_title="Fördelning av förtjänst för paketen i lager")
-                    # input("[Enter] för menyn")
-        case _:
-              new_screen()
 
-# 'NrOfUnassignedPackages': nr_of_unassigned_packages, 
-# 'UnassignedPenalty': unassigned_total_penalty, 
-# 'UnassignedProfit': unassigned_total_profit, 
-# 'TodaysTotalProfit': todays_total_profit,
-# 'SortedAssignedPackages': sorted_packages_trucks,
-# 'SortedUnassignedPackages': sorted_unassigned_packages
+if __name__ == "__main__":
+    file_loaded = False
+    file_name = ""
+    best_solution = 0
+    num_packages = 0
+    menu_sel = ""
+    while menu_sel != "0":
+        print("--------------------------------------------------")
+        print("  Lindas Lustfyllda Rederi")
+        print("--------------------------------------------------")
+        print(f"Inläst fil: {file_name} (Antal paket: {num_packages})")
+        print("--------------------------------------------------")
+        print("1. Läs in lagerstatus.csv")
+        print("2. Läs in lagerstatus2.csv")
+        print("3. Läs in lagerstatus3.csv")
+        print("4. Läs in lagerstatus4.csv")
+        print("--------------------------------------------------")
+        print("5. Kör GA")
+        print("--------------------------------------------------")
+        print("6. Visa statistik")
+        print("7. Plot: fördelningen av vikt och förtjänst\n\tför paketen i bilarna")
+        print("8. Plot: fördelningen av vikt och förtjänst\n\tför paketen i lager")
+        print("--------------------------------------------------")
+        print("0. Avsluta")
+        print("--------------------------------------------------")
+        menu_sel = input("Menyval> ")
+
+        match menu_sel:
+            case '1':
+                    packages = list(read_packages(file='lagerstatus.csv'))
+                    # Lookup dictionary med paketinfo
+                    package_info = {i: package for i, package in enumerate(packages)}
+                    # print(f'package_info: {package_info}')
+                    num_packages = len(packages)
+                    file_loaded = True
+                    file_name = "lagerstatus.csv"
+                    new_screen()
+            case '2':
+                    packages = list(read_packages(file='lagerstatus2.csv'))
+                    # Lookup dictionary med paketinfo
+                    package_info = {i: package for i, package in enumerate(packages)}
+                    num_packages = len(packages)
+                    file_loaded = True
+                    file_name = "lagerstatus2.csv"
+                    new_screen()
+            case '3':
+                    packages = list(read_packages(file='lagerstatus3.csv'))
+                    # Lookup dictionary med paketinfo
+                    package_info = {i: package for i, package in enumerate(packages)}
+                    num_packages = len(packages)
+                    file_loaded = True
+                    file_name = "lagerstatus3.csv"
+                    new_screen()
+            case '4':
+                    packages = list(read_packages(file='lagerstatus4.csv'))
+                    # Lookup dictionary med paketinfo
+                    package_info = {i: package for i, package in enumerate(packages)}
+                    num_packages = len(packages)
+                    file_loaded = True
+                    file_name = "lagerstatus4.csv"
+                    new_screen()
+            case '5':
+                    if file_loaded:
+                        best_solution = genetic_algorithm()
+                        statistics = calculate_statistics(best_solution)
+                        # print("Best solution:", best_solution)
+                        # print("Fitness:", fitness(best_solution))
+                    else:
+                        new_screen()
+                        print("Läs in en fil first")
+            case '6':
+                    if best_solution != 0:
+                        # print(f'best_solution: {best_solution}')
+                        # input()
+                        print(f'Statistik:')
+                        print(f'Förtjänst för dagens leveranser: {statistics['TodaysTotalProfit']}')
+                        print(f'Straffavgift för paket i lagret: {statistics['UnassignedPenalty']}')
+                        print(f'Antal paket i lagret: {statistics['NrOfUnassignedPackages']}')
+                        print(f'Den totala förtjänsten kvar i lager (exkl. straffavgiften): {statistics['UnassignedProfit']}')
+                        print("##################################################################")
+                        sorted_packages_trucks = statistics['SortedAssignedPackages']
+                        for i in range(11):
+                            truck_weight = sum(t[1] for t in sorted_packages_trucks if t[4] == i)
+                            # truck_no_packages = sum(j for t in sorted_packages_trucks if t[4] == i)
+                            print(f'Lastbil #{i}: {truck_weight}')
+                        input("[Enter] för menyn")
+                        new_screen()
+            case '7':
+                    if best_solution != 0:
+                        print(f'Plot: fördelningen av vikt och förtjänst för paketen i bilarna')
+                        input("Any key for plot")
+                        sorted_packages_trucks = statistics['SortedAssignedPackages']
+                        truck_weight_list = [t[1] for t in sorted_packages_trucks]
+                        truck_profit_list = [t[2] for t in sorted_packages_trucks]
+                        # print(f'sorted_packages_trucks {sorted_packages_trucks}')
+                        # input()
+                        plot_stats(weight_list=truck_weight_list, xlabel_weight="Vikt", ylabel_weight="Antal paket", weight_title="Fördelning av vikt för paketen i lastbilarna", 
+                                    profit_list=truck_profit_list, xlabel_profit="Förtjänst", ylabel_profit="Antal paket", profit_title="Fördelning av förtjänst för paketen i lastbilarna")
+                        # input("[Enter] för menyn")
+            case '8':
+                    if best_solution != 0:
+                        print(f'Plot: fördelningen av vikt och förtjänst för paketen i lager')
+                        input("Any key for plot")
+                        sorted_unassigned_packages = statistics['SortedUnassignedPackages']
+                        unassigned_weight_list = [t[1] for t in sorted_unassigned_packages]
+                        unassigned_profit_list = [t[2] for t in sorted_unassigned_packages]
+                        # print(f'sorted_unassigned_packages {sorted_unassigned_packages}')
+                        # input()
+                        plot_stats(weight_list=unassigned_weight_list, xlabel_weight="Vikt", ylabel_weight="Antal paket", weight_title="Fördelning av vikt för paketen i lager", 
+                                    profit_list=unassigned_profit_list, xlabel_profit="Förtjänst", ylabel_profit="Antal paket", profit_title="Fördelning av förtjänst för paketen i lager")
+                        # input("[Enter] för menyn")
+            case _:
+                new_screen()
+
+    # 'NrOfUnassignedPackages': nr_of_unassigned_packages, 
+    # 'UnassignedPenalty': unassigned_total_penalty, 
+    # 'UnassignedProfit': unassigned_total_profit, 
+    # 'TodaysTotalProfit': todays_total_profit,
+    # 'SortedAssignedPackages': sorted_packages_trucks,
+    # 'SortedUnassignedPackages': sorted_unassigned_packages
