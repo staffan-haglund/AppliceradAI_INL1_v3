@@ -270,13 +270,13 @@ while menu_sel != "0":
 
     match menu_sel:
         case '1':
-                packages = list(read_packages(file='lagerstatus1.csv'))
+                packages = list(read_packages(file='lagerstatus.csv'))
                 # Lookup dictionary med paketinfo
                 package_info = {i: package for i, package in enumerate(packages)}
                 # print(f'package_info: {package_info}')
                 num_packages = len(packages)
                 file_loaded = True
-                file_name = "lagerstatus1.csv"
+                file_name = "lagerstatus.csv"
                 new_screen()
         case '2':
                 packages = list(read_packages(file='lagerstatus2.csv'))
