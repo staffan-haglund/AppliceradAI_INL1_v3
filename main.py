@@ -131,7 +131,7 @@ def calculate_statistics(best_solution):
 
     # Den totala straffavgiften för paket som är kvar i lager.
     # −(x^2)där x är antal dagar efter deadline.
-    # unassigned_total_profit = sum(t[2] for t in unassigned_packages)
+    
     unassigned_packages = []
     for i, truck in enumerate(best_solution):
         if truck == 0:
