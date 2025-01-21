@@ -248,7 +248,7 @@ if __name__ == "__main__":
     menu_sel = ""
     while menu_sel != "0":
         print("--------------------------------------------------")
-        print("  Lindas Lustfyllda Rederi")
+        print("  Lindas Lustfyllda Åkeri")
         print("--------------------------------------------------")
         print(f"Inläst fil: {file_name} (Antal paket: {num_packages})")
         print("--------------------------------------------------")
